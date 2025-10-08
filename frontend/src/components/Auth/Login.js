@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, LogIn, Chrome, AlertCircle } from 'lucide-react';
+import { Mail, Lock, LogIn, Chrome, AlertCircle, Info } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { isFirebaseConfigured } from '../../firebase';
 
 const Login = ({ onSwitchToSignup, onLoginSuccess }) => {
   const [email, setEmail] = useState('');
@@ -65,6 +66,21 @@ const Login = ({ onSwitchToSignup, onLoginSuccess }) => {
           </p>
         </div>
 
+        {/* Firebase Warning */}
+        {!isFirebaseConfigured && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 p-3 bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700 rounded-lg flex items-start space-x-2 text-blue-700 dark:text-blue-300"
+          >
+            <Info size={18} className="mt-0.5 flex-shrink-0" />
+            <div className="text-sm">
+              <p className="font-medium mb-1">Firebase Not Configured</p>
+              <p>Authentication features are disabled. Use <strong>Guest Mode</strong> below to continue with local storage.</p>
+            </div>
+          </motion.div>
+        )}
+
         {/* Error Message */}
         {error && (
           <motion.div
@@ -114,8 +130,8 @@ const Login = ({ onSwitchToSignup, onLoginSuccess }) => {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={loading}
-            className="btn-primary w-full flex items-center justify-center space-x-2"
+            disabled={loading || !isFirebaseConfigured}
+            className="btn-primary w-full flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <LogIn size={18} />
             <span>{loading ? 'Signing in...' : 'Sign In'}</span>
@@ -135,8 +151,8 @@ const Login = ({ onSwitchToSignup, onLoginSuccess }) => {
         {/* Google Login */}
         <button
           onClick={handleGoogleLogin}
-          disabled={loading}
-          className="w-full flex items-center justify-center space-x-2 px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-medium"
+          disabled={loading || !isFirebaseConfigured}
+          className="w-full flex items-center justify-center space-x-2 px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Chrome size={20} className="text-red-500" />
           <span>Sign in with Google</span>

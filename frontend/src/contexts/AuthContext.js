@@ -10,7 +10,7 @@ import {
   sendPasswordResetEmail
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { auth, db } from '../firebase';
+import { auth, db, isFirebaseConfigured } from '../firebase';
 
 const AuthContext = createContext();
 
@@ -29,6 +29,12 @@ export const AuthProvider = ({ children }) => {
 
   // Sign up with email and password
   const signup = async (email, password, displayName) => {
+    if (!isFirebaseConfigured || !auth) {
+      const error = new Error('Firebase is not configured. Please add Firebase credentials or use Guest mode.');
+      setError(error.message);
+      throw error;
+    }
+    
     try {
       setError(null);
       const result = await createUserWithEmailAndPassword(auth, email, password);
@@ -37,16 +43,18 @@ export const AuthProvider = ({ children }) => {
       await updateProfile(result.user, { displayName });
       
       // Create user document in Firestore
-      await setDoc(doc(db, 'users', result.user.uid), {
-        uid: result.user.uid,
-        email: result.user.email,
-        displayName: displayName,
-        createdAt: new Date().toISOString(),
-        settings: {
-          darkMode: false,
-          notifications: true
-        }
-      });
+      if (db) {
+        await setDoc(doc(db, 'users', result.user.uid), {
+          uid: result.user.uid,
+          email: result.user.email,
+          displayName: displayName,
+          createdAt: new Date().toISOString(),
+          settings: {
+            darkMode: false,
+            notifications: true
+          }
+        });
+      }
       
       return result.user;
     } catch (err) {
@@ -57,6 +65,12 @@ export const AuthProvider = ({ children }) => {
 
   // Sign in with email and password
   const login = async (email, password) => {
+    if (!isFirebaseConfigured || !auth) {
+      const error = new Error('Firebase is not configured. Please add Firebase credentials or use Guest mode.');
+      setError(error.message);
+      throw error;
+    }
+    
     try {
       setError(null);
       const result = await signInWithEmailAndPassword(auth, email, password);
@@ -69,25 +83,33 @@ export const AuthProvider = ({ children }) => {
 
   // Sign in with Google
   const loginWithGoogle = async () => {
+    if (!isFirebaseConfigured || !auth) {
+      const error = new Error('Firebase is not configured. Please add Firebase credentials or use Guest mode.');
+      setError(error.message);
+      throw error;
+    }
+    
     try {
       setError(null);
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       
       // Check if user document exists, if not create it
-      const userDoc = await getDoc(doc(db, 'users', result.user.uid));
-      if (!userDoc.exists()) {
-        await setDoc(doc(db, 'users', result.user.uid), {
-          uid: result.user.uid,
-          email: result.user.email,
-          displayName: result.user.displayName,
-          photoURL: result.user.photoURL,
-          createdAt: new Date().toISOString(),
-          settings: {
-            darkMode: false,
-            notifications: true
-          }
-        });
+      if (db) {
+        const userDoc = await getDoc(doc(db, 'users', result.user.uid));
+        if (!userDoc.exists()) {
+          await setDoc(doc(db, 'users', result.user.uid), {
+            uid: result.user.uid,
+            email: result.user.email,
+            displayName: result.user.displayName,
+            photoURL: result.user.photoURL,
+            createdAt: new Date().toISOString(),
+            settings: {
+              darkMode: false,
+              notifications: true
+            }
+          });
+        }
       }
       
       return result.user;
@@ -145,6 +167,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    if (!isFirebaseConfigured || !auth) {
+      setLoading(false);
+      return;
+    }
+    
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setLoading(false);
