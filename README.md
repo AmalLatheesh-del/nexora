@@ -1,3 +1,5 @@
+INFINTE LOOPERS
+
 # Nexora - Personal Command Center
 
 A modern, elegant, and responsive Personal Command Center that helps you manage and simplify your daily life. Built with React, Tailwind CSS, and Framer Motion for a beautiful, futuristic user experience.
